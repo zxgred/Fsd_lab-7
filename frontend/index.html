@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>University API Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Top bar (frosted glass) -->
+<nav class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="/">🎓 University API</a>
+        <div class="menu">
+            <a href="/" data-page="portal">Portal</a>
+            <a href="/settings" data-page="settings">Settings</a>
+            <a href="/admin" data-page="admin">Admin</a>
+        </div>
+    </div>
+</nav>
+
+<main>
+
+    <!-- ================= PORTAL (students and teachers) ================= -->
+    <section id="viewPortal" hidden>
+        <header class="hero">
+            <p class="kicker">Student &amp; Teacher Portal</p>
+            <h1>Your records, protected by an API key.</h1>
+            <p class="lead">Students see their own marks. Teachers see the marks of every student.</p>
+        </header>
+
+        <div class="wrap">
+            <div class="card center-card" id="portalNoKey" hidden>
+                <div class="big-icon">🔑</div>
+                <h2>No API key saved yet</h2>
+                <p class="muted">Enter the key your administrator gave you in Settings.</p>
+                <a class="btn btn-main" href="/settings">Go to Settings</a>
+            </div>
+
+            <div class="notice notice-bad" id="portalError" hidden></div>
+
+            <div id="portalDash" hidden>
+                <!-- Who am I + key usage -->
+                <div class="card who-card">
+                    <div>
+                        <p class="kicker" id="whoRole"></p>
+                        <h2 id="whoName"></h2>
+                        <p class="muted" id="whoMeta"></p>
+                    </div>
+                    <div class="meter-box">
+                        <p class="meter-title">API key usage <span id="keyPrefix" class="mono"></span></p>
+                        <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+                        <p class="muted small" id="meterText"></p>
+                    </div>
+                </div>
+
+                <!-- Student view -->
+                <div id="studentArea" hidden>
+                    <div class="card">
+                        <h2>My information</h2>
+                        <div class="info-grid" id="profileGrid"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h2>My marks</h2><span class="soft-pill" id="marksSummary"></span></div>
+                        <div class="table-wrap" id="myMarks"></div>
+                    </div>
+                </div>
+
+                <!-- Teacher view -->
+                <div id="teacherArea" hidden>
+                    <div class="card">
+                        <div class="card-head">
+                            <h2>Students</h2>
+                            <input type="search" id="studentSearch" placeholder="Search name or roll number">
+                        </div>
+                        <div class="table-wrap" id="studentsTable"></div>
+                    </div>
+                    <div class="card" id="marksCard">
+                        <div class="card-head">
+                            <h2 id="marksTitle">Marks of all students</h2>
+                            <select id="marksFilter"></select>
+                        </div>
+                        <div class="table-wrap" id="marksTable"></div>
+                    </div>
+                </div>
+
+                <!-- API tester -->
+                <div class="card">
+                    <h2>API tester</h2>
+                    <p class="muted">Send a request with your saved key and see the HTTP status code. Try another student's id to see the access rules.</p>
+                    <div class="tester-row">
+                        <select id="testerPath"></select>
+                        <input type="number" id="testerId" min="1" placeholder="Student id">
+                        <button type="button" class="btn btn-main" id="testerSend">Send request</button>
+                    </div>
+                    <div id="testerResult" hidden>
+                        <div class="status-line"><span class="code-pill" id="testerStatus"></span><span class="mono" id="testerUrl"></span></div>
+                        <pre class="code-block" id="testerBody"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section id="viewSettings" hidden>
+        <header class="hero">
+            <p class="kicker">Settings</p>
+            <h1>Save your API key.</h1>
+            <p class="lead">Paste the key your administrator generated for you. It is checked against the database before it is saved.</p>
+        </header>
+
+        <div class="wrap narrow">
+            <div class="card">
+                <form id="settingsForm">
+                    <div class="field">
+                        <label for="keyInput">Your API key</label>
+                        <input type="password" id="keyInput" placeholder="std_... or tch_..." autocomplete="off" spellcheck="false">
+                    </div>
+                    <label class="tick"><input type="checkbox" id="showKey"> Show key</label>
+                    <p class="problem" id="settingsMessage" role="status"></p>
+                    <button type="submit" class="btn btn-main btn-full" id="settingsSave">Check and save key</button>
+                </form>
+            </div>
+
+            <div class="card" id="savedBox" hidden>
+                <h2>Saved key</h2>
+                <p class="mono big-mono" id="savedMask"></p>
+                <p class="muted">This key is stored in this browser and sent in the <span class="mono">x-api-key</span> header.</p>
+                <div class="row-actions">
+                    <a class="btn btn-main" href="/">Open portal</a>
+                    <button type="button" class="btn btn-soft" id="removeKey">Remove saved key</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ADMIN PANEL ================= -->
+    <section id="viewAdmin" hidden>
+        <header class="hero">
+            <p class="kicker">Administrator</p>
+            <h1>API key management.</h1>
+            <p class="lead">Generate keys, set request limits, watch usage and revoke access.</p>
+        </header>
+
+        <div class="wrap">
+            <!-- Admin key prompt -->
+            <div class="card center-card narrow-card" id="adminLock">
+                <div class="big-icon">🔐</div>
+                <h2>Enter the admin API key</h2>
+                <form id="adminLoginForm">
+                    <div class="field">
+                        <input type="password" id="adminKeyInput" placeholder="Admin API key" autocomplete="off" spellcheck="false">
+                    </div>
+                    <p class="problem" id="adminLockError" role="alert"></p>
+                    <button type="submit" class="btn btn-main btn-full">Unlock admin panel</button>
+                </form>
+            </div>
+
+            <!-- Admin dashboard -->
+            <div id="adminDash" hidden>
+                <div class="stat-grid" id="adminStats"></div>
+
+                <div class="toolbar">
+                    <div class="seg" id="adminTabs">
+                        <button type="button" class="is-on" data-tab="Students">Students</button>
+                        <button type="button" data-tab="Teachers">Teachers</button>
+                        <button type="button" data-tab="Keys">API keys</button>
+                    </div>
+                    <button type="button" class="btn btn-soft btn-small" id="adminLockBtn">Lock panel</button>
+                </div>
+
+                <div class="card" id="tabStudents"><div class="table-wrap" id="studentsAdmin"></div></div>
+                <div class="card" id="tabTeachers" hidden><div class="table-wrap" id="teachersAdmin"></div></div>
+                <div class="card" id="tabKeys" hidden><div class="table-wrap" id="keysAdmin"></div></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">University API Access Management System · jQuery AJAX, Node.js, Express &amp; MySQL</footer>
+
+<!-- Reusable window -->
+<div class="layer" id="modalLayer" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <h2 id="modalTitle"></h2>
+        <div id="modalBody"></div>
+        <p class="problem" id="modalError" role="alert"></p>
+        <div class="dialog-actions" id="modalFooter"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- jQuery CDN first, then our own script -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
